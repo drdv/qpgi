@@ -13,4 +13,4 @@
 
 2. It relies on the [Eigen](http://eigen.tuxfamily.org) library.
 
-3. I have borrowed ideas about code structure from [jemdoc](https://github.com/asherikov/qpmad)
+3. I have borrowed ideas about code structure from [qpmad](https://github.com/asherikov/qpmad).
