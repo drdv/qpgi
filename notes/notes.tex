@@ -1,0 +1,354 @@
+\documentclass[12pt,a4paper]{article}
+
+% ================================================================================
+
+\newcommand{\norm}[1]{\left\lVert#1\right\rVert}
+\newcommand{\minimize}[1]{\mathop{\mbox{minimize}}_{#1} \ \ }
+\newcommand{\st}[0]{\mbox{subject to} \ \ }
+
+% ================================================================================
+
+\usepackage{amssymb}
+\usepackage{amsfonts}
+\usepackage[sans]{dsfont}
+\usepackage{bbm}
+\usepackage{amsmath,bm}
+\usepackage{color}
+\usepackage[top=2cm, bottom=2cm, left=2cm, right=2cm]{geometry}
+\usepackage{accents}
+
+\newcommand{\ubar}[1]{\underaccent{\bar}{#1}}
+
+% ================================================================================
+
+\begin{document}
+
+\section{The QP problem}
+
+We consider the strictly convex QP (\emph{i.e.,} $H$ is positive definite and
+non-singular)
+%
+\begin{align} \label{eq.QP_ineq}
+  \begin{split}
+    \minimize{x} & f(x) = \frac{1}{2}x^THx + x^Th \\
+    \st          & s(x) = Cx -c \leq 0.
+  \end{split}
+\end{align}
+
+\section{Adding one constraint to the working set}
+
+Consider the strictly convex QP
+%
+\begin{align} \label{eq.QP_eq}
+  \begin{split}
+    \minimize{x} & \frac{1}{2}x^THx + x^Th \\
+    \st          & Ax = y,
+  \end{split}
+\end{align}
+%
+where matrix $A$ has full row rank. The solution pair
+$(x^{\star},\lambda^{\star})$ satisfies
+%
+\begin{align} \label{eq.QP_KKT}
+  \begin{bmatrix}
+    H & A^T \\
+    A & 0
+  \end{bmatrix}
+  \begin{bmatrix}
+    x^{\star} \\ \lambda^{\star}
+  \end{bmatrix} =
+  \begin{bmatrix}
+    -h \\ y
+  \end{bmatrix}.
+\end{align}
+%
+Now, consider~\eqref{eq.QP_eq} with an additional equality constraint
+%
+\begin{align}
+  \begin{split}
+    \minimize{\Delta x} & \frac{1}{2}(x^{\star} + \Delta x)^TH(x^{\star} + \Delta x) + (x^{\star} + \Delta x)^Th \\
+    \st          & A(x^{\star} + \Delta x) = y \\
+                 & a^T(x^{\star} + \Delta x) = b,
+  \end{split}
+\end{align}
+%
+which is equivalent to
+%
+%
+\begin{align}
+  \begin{split}
+    \minimize{\Delta x} & \frac{1}{2}\Delta x^TH\Delta x + \Delta x^T(Hx^{\star} + h) \\
+    \st          & A\Delta x = 0 \\
+                 & a^T\Delta x = b - a^Tx^{\star}.
+  \end{split}
+\end{align}
+%
+The solution $(x^{\star} + \Delta x^{\star},\lambda^{\star} + \Delta
+\lambda^{\star}, \Delta \mu)$ satisfies
+%
+\begin{align}
+  \begin{bmatrix}
+    H   & A^T & a \\
+    A   &   0 & 0 \\
+    a^T &   0 & 0
+  \end{bmatrix}
+  \begin{bmatrix}
+    \Delta x^{\star} \\ \Delta \lambda^{\star} \\ \Delta \mu
+  \end{bmatrix} =
+  \begin{bmatrix}
+    0 \\ 0 \\ b - a^Tx^{\star}
+  \end{bmatrix},
+\end{align}
+%
+where we have used that $Hx^{\star} + h + A^T\lambda^{\star} = 0$ (follows
+from~\eqref{eq.QP_KKT}). Hence,
+%
+\begin{align}
+  \Delta \lambda^{\star} &= \underbrace{-F a}_{\delta \lambda} \Delta \mu \label{eq.delta_lambda} \\
+  \Delta x^{\star} &= \underbrace{Ba}_{\delta x} \Delta \mu \label{eq.delta_x} \\
+  \Delta \mu &= (a^T Ba)^{-1}(b - a^Tx^{\star}) = \frac{b - a^Tx^{\star}}{a^T\delta x}, \label{eq.delta_mu}
+\end{align}
+%
+with
+%
+\begin{align}
+  B &= H^{-1}A^T(AH^{-1}A^T)^{-1}AH^{-1} - H^{-1} \label{eq.B}\\
+  F &= (AH^{-1}A^T)^{-1}AH^{-1}. \label{eq.F}
+\end{align}
+%
+Note that $Ax^{\star} = y$, $A\delta x = 0$, and $a^T(x^{\star} + \Delta
+\mu\delta x) = b$ (provided that $(0,b)$ is in the range of $(A,a^T)$).
+
+\section{Dual algorithm of Golgfarb-Idnani}
+
+\subsection{Notation}
+
+\begin{itemize}
+\item $\mathbb{W}$ is a sequence of indexes of constraints. Note that, even
+  though, normally, it is referred to as the ``working set'', its elements are
+  ordered. For example, the third element of $\mathbb{W} =
+  \langle4,5,2,3\rangle$, denoted by $\mathbb{W}_3$, is equal to $2$. The
+  operation $\mathbb{W} \leftarrow \mathbb{W} + 7$ results in $\mathbb{W} =
+  \langle4,5,2,3,7\rangle$, while $\mathbb{W} \leftarrow \mathbb{W} -
+  \mathbb{W}_{2}$ gives $\mathbb{W} = \langle4,2,3,7\rangle$. $\mathbb{W}
+  \leftarrow \langle\rangle$ denotes the empty sequence.
+\item $u$: Lagrange multipliers associated with all constraints (ordered as they appear in $s$)
+\item $\delta\lambda$: Lagrange multipliers step for the active constraints (ordered as they appear in $\mathbb{W}$)
+\item $\delta x \in \mathbb{R}^{n}$: primal step at the current iteration ($x$ contains the primal variables)
+\item $C_i$: the $i$-th row of $C$, $c_i$: the $i$-th component of $c$
+\item $A = C_{\mathbb{W}}$, $y = c_{\mathbb{W}}$
+\end{itemize}
+
+\subsection{Algorithm (from~\cite{Goldfarb.1981})}
+
+\begin{enumerate}
+\item $x \leftarrow -H^{-1}h$, $\mathbb{W} \leftarrow \langle\rangle$
+\item If $V = \{k \not\in \mathbb{W} \,|\, s_k(x) > 0\} = \emptyset$, STOP $x$
+  is both feasible and optimal. Otherwise, choose a candidate constraint, with
+  index $v \in V$, for inclusion in the working set, and set $a \leftarrow
+  C_v^T$, $b \leftarrow c_v$, $\mu \leftarrow 0$, where $\mu$ is a multiplier
+  associated with $(a,b)$.
+\item Determine $\delta x$ from~\eqref{eq.delta_x} and if $\mathbb{W} \neq
+  \langle\rangle$, $\delta \lambda$ from~\eqref{eq.delta_lambda}.
+\item Determine $\tau^{\text{prim}}$, $\tau^{\text{dual}}$ and $\tau$ from:
+  %
+  \begin{align}
+    \tau^{\text{prim}} &\leftarrow \left\{
+    \begin{array}{l l}
+      \infty & \text{if }\, \delta x = 0 \\
+      \Delta \mu & \text{otherwise}
+    \end{array}
+    \right. \\
+    \tau^{\text{dual}} &\leftarrow \left\{
+    \begin{array}{l l}
+      \infty & \text{if }\, \mathbb{W} = \langle\rangle \text{ or } \lambda \geq 0 \\
+      -\frac{u_{\mathbb{W}_{\ell}}}{\delta \lambda_{\ell}} & \text{otherwise}
+    \end{array}
+    \right. \\
+    \tau &\leftarrow \min(\tau^{\text{prim}}, \tau^{\text{dual}}),
+  \end{align}
+  %
+  where $\ell$ is the index (in $\mathbb{W}$) of a blocking dual constraint
+  %
+  \begin{align}
+  \ell = \arg\min_{i}\Bigl\{-\frac{u_{\mathbb{W}_i}}{\delta \lambda_i} \, \Bigm| \, \delta \lambda_i < 0 \Bigr\}.
+  \end{align}
+
+\item If $\tau^{\text{prim}} = \infty$ and $\tau^{\text{dual}} = \infty$, STOP
+  (the problem is infeasible)
+
+\item Else if $\tau^{\text{prim}} = \infty$, set $u_{\mathbb{W}} \leftarrow
+  u_{\mathbb{W}} + \tau \delta \lambda$, $\mu \leftarrow \mu + \tau$, drop the
+  $\ell$-th constraint $\mathbb{W} \leftarrow \mathbb{W} - \mathbb{W}_{\ell}$,
+  and go to Step 3.
+
+\item Otherwise, set $x \leftarrow x + \tau \delta x$, $u_{\mathbb{W}}
+  \leftarrow u_{\mathbb{W}} + \tau \delta \lambda$, $\mu \leftarrow \mu + \tau$
+
+  \begin{enumerate}
+  \item If $\tau = \tau^{\text{prim}}$, a full step was taken (the candidate
+    constraint has been satisfied), set $u_v \leftarrow \mu$, add the $v$-th
+    constraint $\mathbb{W} \leftarrow \mathbb{W} + v$, and go to
+    Step 2.
+  \item If $\tau = \tau^{\text{dual}}$, only a partial step was taken, drop the
+    $\ell$-th constraint $\mathbb{W} \leftarrow \mathbb{W} - \mathbb{W}_{\ell}$,
+    and go to Step 3.
+  \end{enumerate}
+
+\end{enumerate}
+
+\section{Numerical implementation}
+
+\subsection{Factorization}
+
+\begin{align}
+  H &= LL^T \\
+  L^{-1}A^T &=
+  \underbrace{\begin{bmatrix}
+    Q_1 & Q_2
+  \end{bmatrix}}_{Q}
+  \begin{bmatrix}
+    R \\ 0
+  \end{bmatrix}  \in \mathbb{R}^{n \times n_a} \\
+  J &= L^{-T}Q =
+  \begin{bmatrix}
+    L^{-T}Q_1 & L^{-T}Q_2
+  \end{bmatrix} =
+  \begin{bmatrix}
+    J_1 & J_2
+  \end{bmatrix} \in \mathbb{R}^{n \times n},
+\end{align}
+%
+where $n_a = |\mathbb{W}|$, $L$ (a lower triangular matrix) is the Cholesky
+factorization of $H$, $Q \in \mathbb{R}^{n \times n}$ is orthonormal, $Q_1 \in
+\mathbb{R}^{n \times n_a}$ and $R$ is upper triangular. Substituting the above
+expressions in~\eqref{eq.B} and~\eqref{eq.F}
+%
+\begin{align*}
+  B &= H^{-1}A^T(AH^{-1}A^T)^{-1}AH^{-1} - H^{-1}\\
+  F &= (AH^{-1}A^T)^{-1}AH^{-1}.
+\end{align*}
+%
+gives
+%
+\begin{align*}
+  F &= (AL^{-T}L^{-1}A^T)^{-1}AL^{-T}L^{-1} \\
+    &= (R^TR)^{-1}R^TQ_1^TL^{-1} \\
+    &= R^{-1}J_1^T, \\[0.2cm]
+%
+  B &= L^{-T}L^{-1}A^TR^{-1}J_1^T - L^{-T}L^{-1} \\
+    &= L^{-T}Q_1RR^{-1}J_1^T - L^{-T}L^{-1} \\
+    &= J_1J_1^T - L^{-T}L^{-1} \\
+    &= -J_2J_2^T.
+\end{align*}
+%
+The primal and dual directions $\delta x$ and $\delta \lambda$ can be expressed
+in terms of
+%
+\begin{align}
+  d = J^Ta =
+  \begin{bmatrix}
+    J_1^T \\ J_2^T
+  \end{bmatrix}a =
+  \begin{bmatrix}
+    d_1 \\ d_2
+  \end{bmatrix}
+\end{align}
+%
+as
+%
+\begin{align}
+  \delta x &= -J_2d_2 \\
+  \delta \lambda &= -R^{-1}d_1.
+\end{align}
+%
+In the implementation one has to store $L$ (in place of $H$), $R$ and $J$ (in
+two $n \times n$ arrays). $J$ is initialized equal to $L^{-T}$.
+
+\subsection{Update matrices $R$ and $J$}
+
+When $v$ is added to $\mathbb{W}$, we have $L^{-1} \begin{bmatrix} A^T &
+  a \end{bmatrix}$, and hence
+%
+\begin{align}
+  Q^T\begin{bmatrix} L^{-1}A^T & L^{-1}a \end{bmatrix} =
+  \begin{bmatrix} R & d_1 \\ 0 & d_2 \end{bmatrix},
+\end{align}
+%
+where we used that
+%
+\begin{align}
+\begin{bmatrix} Q_1^T \\ Q_2^T \end{bmatrix} L^{-1}a =
+\begin{bmatrix} J_1^T \\ J_2^T \end{bmatrix} a =
+\begin{bmatrix} d_1 \\ d_2 \end{bmatrix}.
+\end{align}
+%
+Hence, the QR factorization of $L^{-1} \begin{bmatrix} A^T & a \end{bmatrix}$
+can be obtained as
+%
+\begin{align}
+  \begin{bmatrix} L^{-1}A^T & L^{-1}a \end{bmatrix} &=
+  Q\begin{bmatrix} I & 0 \\ 0 & \bar{Q}^T \end{bmatrix}
+  \begin{bmatrix} I & 0 \\ 0 & \bar{Q} \end{bmatrix}
+  \begin{bmatrix} R & d_1 \\ 0 & d_2 \end{bmatrix} \\
+  &= Q_{+}
+  \begin{bmatrix} R_{+} \\ 0 \end{bmatrix},
+\end{align}
+%
+where
+%
+\begin{align}
+  Q_{+} = Q\begin{bmatrix} I & 0 \\ 0 & \bar{Q}^T \end{bmatrix} \in \mathbb{R}^{n \times n}, \quad
+  R_{+} = \begin{bmatrix} R & d_1 \\ 0 & \norm{d_2} \end{bmatrix} \in \mathbb{R}^{n \times (n_a+1)},
+\end{align}
+%
+and $\bar{Q}$ is an orthonormal matrix such that
+%
+\begin{align}
+  \bar{Q}d_2 = \begin{bmatrix} \norm{d_2} \\ 0\end{bmatrix}.
+\end{align}
+%
+The updated matrix $J$ is given by
+%
+\begin{align}
+  J_{+} = L^{-T}Q_{+} = L^{-T}Q\begin{bmatrix} I & 0 \\ 0 & \bar{Q}^T \end{bmatrix} =
+  \begin{bmatrix}
+    J_1 & J_2
+  \end{bmatrix}
+  \begin{bmatrix} I & 0 \\ 0 & \bar{Q}^T \end{bmatrix} =
+  \begin{bmatrix}
+    J_1 & J_2\bar{Q}^T
+  \end{bmatrix} =
+  \begin{bmatrix}
+    J_{1+} & J_{2+}
+  \end{bmatrix}.
+\end{align}
+%
+Note that $J_1 \in \mathbb{R}^{n \times n_a}$, $J_2 \in \mathbb{R}^{n \times
+  (n-n_a)}$, while $J_{1+} \in \mathbb{R}^{n \times (n_a+1)}$, $J_{2+} \in
+\mathbb{R}^{n \times (n-n_a-1)}$. The matrix $Q$ need not be stored explicitly.
+
+\subsection{Downdating matrices $R$ and $J$}
+
+When the $\ell$-th constraint is dropped from $\mathbb{W}$ the
+$\mathbb{W}_{\ell}$-th row of $A$ has to be removed to obtain $A_{-}$. Removing
+the $\ell$-th column of matrix $Q^{T}L^{-1}A^T$ leads to the following structure
+%
+\begin{align}
+  Q^TL^{-1}A^T_{-} =
+  \begin{bmatrix} R_{\ell} & S \\ 0 & T \end{bmatrix},
+\end{align}
+%
+where $R_{\ell}$ is a $(\ell-1)\times(\ell-1)$ upper triangular matrix. If $\ell
+\neq |\mathbb{W}|$, we need to apply orthonormal transformations to the rows of
+$T$ in order to obtain an upper triangular $R_{-}$. As with the updates in the
+previous Section, the inverse of these transformations have to be applied to the
+columns of $J$ to obtain $J_{-}$, \emph{i.e.,} $J_{-} = J\hat{Q}$. Since $d_{-}
+= J_{-}^Ta = \hat{Q}^TJ^{T}a$, we can obtain $d_{-} = \hat{Q}^Td$.
+
+\bibliographystyle{ieeetr}
+\bibliography{biblio}
+
+\end{document}
+
+%%%EOF
