@@ -1,4 +1,5 @@
 addpath('./matlab_implementation')
+addpath('~/local/bin/qp_mex')
 
 clear;clc
 

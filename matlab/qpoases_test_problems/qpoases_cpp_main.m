@@ -1,5 +1,5 @@
 addpath('../matlab_implementation')
-addpath('../')
+addpath('~/local/bin/qp_mex')
 
 %% tolenrace used when comparing the solution
 solution_tolerance = 1e-09;
