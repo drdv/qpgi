@@ -1,6 +1,11 @@
 function [X,F] = solve_and_verify(x_ref,H,h,C,c)
 %%%
+%%% solved the problem
 %%%
+%%%  min. 0.5*x'*H*x + x'*h
+%%%   st. C*x <= c
+%%%
+%%% with {qpgi, quadprog, qld, qpmad, quaprogpp} and display results
 %%%
     options = optimset('Algorithm','active-set','Display','off');
 
@@ -38,25 +43,25 @@ function [X,F] = solve_and_verify(x_ref,H,h,C,c)
     %% -------------------------------------------------------------
 
     lbC = -1e+10*ones(size(c));
-    [x_qld,~,   exitflag] = qld        ([], H, h, [], [], [], [], C, c);
+    [x_qld,~,   exitflag] = qld([], H, h, [], [], [], [], C, c);
     if exitflag.info == 0
 	status_qld = 'SOLVED';
     else
 	status_qld = 'FAILED';
     end
 
-    [x_qpmad, exitflag] = qpmad      (H, h, [], [], [], [], C, lbC, c);
+    [x_qpmad, exitflag] = qpmad(H, h, [], [], [], [], C, lbC, c);
     if exitflag.status == 0
 	status_qpmad = 'SOLVED';
     else
 	status_qpmad = 'FAILED';
     end
 
-    [x_quadp, exitflag] = quadprogpp (H, h, [], [], [], [], C, lbC, c);
+    [x_quadpp, exitflag] = quadprogpp(H, h, [], [], [], [], C, lbC, c);
     if exitflag.status == 0
-	status_quadp = 'SOLVED';
+	status_quadpp = 'SOLVED';
     else
-	status_quadp = 'FAILED';
+	status_quadpp = 'FAILED';
     end
 
     f_ref    = get_obj_val(x_ref,H,h);
@@ -64,7 +69,7 @@ function [X,F] = solve_and_verify(x_ref,H,h,C,c)
     f_matlab = get_obj_val(x_matlab,H,h);
     f_qld    = get_obj_val(x_qld,H,h);
     f_qpmad  = get_obj_val(x_qpmad,H,h);
-    f_quadp  = get_obj_val(x_quadp,H,h);
+    f_quadpp = get_obj_val(x_quadpp,H,h);
 
     %% -------------------------------------------------------------
 
@@ -76,9 +81,9 @@ function [X,F] = solve_and_verify(x_ref,H,h,C,c)
     fprintf(' [%s] matlab: err(x) = %e, err(f) = %e\n', status_matlab, norm(x_ref-x_matlab) , abs(f_ref-f_matlab));
     fprintf(' [%s] qld   : err(x) = %e, err(f) = %e\n', status_qld, norm(x_ref-x_qld)  , abs(f_ref-f_qld));
     fprintf(' [%s] qpmad : err(x) = %e, err(f) = %e\n', status_qpmad, norm(x_ref-x_qpmad), abs(f_ref-f_qpmad));
-    fprintf(' [%s] quadp : err(x) = %e, err(f) = %e\n', status_quadp, norm(x_ref-x_quadp), abs(f_ref-f_quadp));
+    fprintf(' [%s] quadpp: err(x) = %e, err(f) = %e\n', status_quadpp, norm(x_ref-x_quadpp), abs(f_ref-f_quadpp));
 
-    X = [x_ref,x_qpgi,x_matlab,x_qld,x_qpmad,x_quadp];
-    F = [f_ref,f_qpgi,f_matlab,f_qld,f_qpmad,f_quadp];
+    X = [x_ref,x_qpgi,x_matlab,x_qld,x_qpmad,x_quadpp];
+    F = [f_ref,f_qpgi,f_matlab,f_qld,f_qpmad,f_quadpp];
 
 %%%EOF
