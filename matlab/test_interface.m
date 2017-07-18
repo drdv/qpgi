@@ -18,7 +18,7 @@ end
 
 [x,u,W,status,iter] = qpgi_matlab(H,h,C,c,false);
 
-[x1, status1] = qpgi(H, h, C, c);
+[x1, status1, u1, iter1] = qpgi(H, h, C, c);
 
 norm(x-x1)
 

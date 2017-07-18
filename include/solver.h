@@ -184,5 +184,19 @@ namespace qpgi
                 }
             }
         }
+
+        // -----------------------------------------------------------------------
+        // getters
+        // -----------------------------------------------------------------------
+
+        Vector dual_variable()
+        {
+            return _dual_variable;
+        }
+
+        Index numb_iterations()
+        {
+            return _iteration_number;
+        }
     };
 }
