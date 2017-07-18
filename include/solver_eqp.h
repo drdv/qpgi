@@ -72,7 +72,9 @@ namespace qpgi
             }
 
             RealScalar denominator = C.row(candidate_constraint._index) * primal_step_direction;
-            if (std::abs(denominator) >= tolerance) // idea from qpmad (I am not sure about the implications)
+            // idea from qpmad (however, it seems to be more reasonable to square the tolerance)
+            // (this hasn't been tested properly)
+            if (std::abs(denominator) >= tolerance*tolerance)
             {
                 primal_step_length = -candidate_constraint._ctr_violation / denominator;
             }

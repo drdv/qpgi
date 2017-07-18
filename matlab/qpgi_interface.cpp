@@ -14,6 +14,7 @@ void mexFunction( int numb_output, mxArray *output[], int numb_input, const mxAr
     const mxArray *h_mex = input[1];
     const mxArray *C_mex = input[2];
     const mxArray *c_mex = input[3];
+    const mxArray *tol_mex = input[4];
 
     int numb_var = mxGetM(H_mex);
     int numb_ctr = mxGetM(C_mex);
@@ -35,6 +36,8 @@ void mexFunction( int numb_output, mxArray *output[], int numb_input, const mxAr
     Eigen::Map<qpgi::Vector> c(mxGetPr(c_mex), numb_ctr);
     Eigen::Map<qpgi::Vector> x(mxGetPr(x_mex), numb_var);
 
+    double tol = *mxGetPr(tol_mex);
+
     // ----------------------------------------------------------------
     // solve problem:
     // ----------------------------------------------------------------
@@ -43,7 +46,7 @@ void mexFunction( int numb_output, mxArray *output[], int numb_input, const mxAr
     qpgi::TerminationReason termination_reason;
     try
     {
-        termination_reason = solver.solve(x, H, h, C, c);
+        termination_reason = solver.solve(x, H, h, C, c, tol);
         Eigen::Map<qpgi::Vector>((double *)mxGetPr(u_mex), numb_ctr, 1) = solver.dual_variable();
         *mxGetPr(numb_iterations) = solver.numb_iterations();
     }

@@ -1,4 +1,4 @@
-function log = qpoases_cpp_solve(P,tolerance)
+function log = qpoases_cpp_solve(P, solver_tolerance, solution_tolerance)
 %%%
 %%% solve qpoases problems is structure P
 %%%
@@ -16,7 +16,7 @@ function log = qpoases_cpp_solve(P,tolerance)
 	    c = [c;P.ubA(i,:)';-P.lbA(i,:)'];
 	end
 
-	[x,exitflag] = qpgi(P.H,P.g(i,:)',C,c);
+	[x,exitflag] = qpgi(P.H,P.g(i,:)',C,c,solver_tolerance);
 
 	if strcmp(exitflag, 'HESSIAN_FACTORIZATION_PROBLEMS')
 	    fprintf('-STOP-   <POSSIBLY_SINGULAR_HESSIAN: %e> Problem [%s (%d/%d)] \n', ...
@@ -34,7 +34,7 @@ function log = qpoases_cpp_solve(P,tolerance)
 	end
 
 	err = x - P.x_opt(i,:)';
-	if norm(err) <= tolerance
+	if norm(err) <= solution_tolerance
             fprintf('SOLVED   Problem [%s (%d/%d)]: %e \n', ...
 		    P.folder_name, i, P.numb_qps, norm(err));
 
