@@ -1,4 +1,4 @@
-function [X,F] = solve_and_verify(x_ref,H,h,C,c)
+function [X,F] = solve_and_verify(x_ref,H,h,C,c,tol_qpgi)
 %%%
 %%% solved the problem
 %%%
@@ -11,9 +11,13 @@ function [X,F] = solve_and_verify(x_ref,H,h,C,c)
 
     tol_ctr_violation = 1e-10;
 
+    if nargin < 6
+	tol_qpgi = 1e-12;
+    end
+
     %% -------------------------------------------------------------
 
-    [x_qpgi,exitflag,u,iter] = qpgi(H,h,C,c);
+    [x_qpgi,exitflag,u,iter] = qpgi(H,h,C,c,tol_qpgi);
     if strcmp(exitflag,'SOLVED')
 	status_qpgi = 'SOLVED';
     else
@@ -23,9 +27,9 @@ function [X,F] = solve_and_verify(x_ref,H,h,C,c)
     opt_cond_qpgi = norm(H*x_qpgi + h + C'*u);
     violated_qpgi = find(C*x_qpgi-c > tol_ctr_violation);
 
-    if ~isempty(violated_qpgi)
+    if strcmp(status_qpgi,'SOLVED') && ~isempty(violated_qpgi)
 	disp('qpgi: violated constraints')
-	v = C*x-c; v(violated_qpgi)
+	v = C*x_qpgi-c; v(violated_qpgi)
     end
 
     %% -------------------------------------------------------------
