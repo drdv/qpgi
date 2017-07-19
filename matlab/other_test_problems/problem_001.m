@@ -1,4 +1,4 @@
-function [H,h,C,c,x_ref] = problem_1(n)
+function [H,h,C,c,x_ref] = problem_001(n)
 %%%
 %%% M. Powell, "On the quadratic programming algorithm
 %%%             of Goldfarb and Idnani," 1984.

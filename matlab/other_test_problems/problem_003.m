@@ -1,4 +1,4 @@
-function [H,h,C,c,x_ref] = problem_3(case_flag)
+function [H,h,C,c,x_ref] = problem_003(case_flag)
 %%%
 %%% M. Powell, "On the quadratic programming algorithm
 %%%             of Goldfarb and Idnani," 1984.

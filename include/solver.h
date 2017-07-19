@@ -196,7 +196,7 @@ namespace qpgi
 
         Index numb_iterations()
         {
-            return _iteration_number;
+            return _iteration_number+1;
         }
     };
 }
