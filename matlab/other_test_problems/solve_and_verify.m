@@ -61,7 +61,8 @@ function [X,F] = solve_and_verify(x_ref,H,h,C,c,tol_qpgi)
 	status_qpmad = 'FAILED';
     end
 
-    [x_quadpp, exitflag] = quadprogpp(H, h, [], [], [], [], C, lbC, c);
+    options_quadprogpp.regularization_factor = 0;
+    [x_quadpp, exitflag] = quadprogpp(H, h, [], [], [], [], C, lbC, c, options_quadprogpp);
     if exitflag.status == 0
 	status_quadpp = 'SOLVED';
     else
