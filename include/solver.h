@@ -50,8 +50,8 @@ namespace qpgi
             _constraints_register.initialize(primal_variable_size, dual_variable_size);
             _dual_variable.setZero(dual_variable_size);
 
-            // inplace Cholesky decomposition (stored in the upper triangular part of H)
-            Eigen::LLT<Eigen::Ref<Matrix>, Eigen::Upper> chol(H);
+            // inplace Cholesky decomposition (stored in the lower triangular part of H)
+            Eigen::LLT<Eigen::Ref<Matrix>, Eigen::Lower> chol(H);
 
             // Note that Cholesky decomposition is not rank-revealing, e.g.,
             // H = [2 -2;-2 2]; has Cholesky decomposition L = chol(H) = [x x;0 2.107342e-08];

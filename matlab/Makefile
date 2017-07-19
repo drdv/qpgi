@@ -1,3 +1,5 @@
+all: matlab install
+
 matlab:
 	matlab -nosplash -nodesktop -nojvm -r 'make; quit' | tail +10
 
@@ -6,6 +8,7 @@ octave:
 	rm -rf *.o
 
 install:
+	@echo "Installing ..."
 	mv *.mex* ~/local/bin/qp_mex
 	cp qpgi.m ~/local/bin/qp_mex
 

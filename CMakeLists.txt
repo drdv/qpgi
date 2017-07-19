@@ -2,7 +2,7 @@ cmake_minimum_required (VERSION 3.0)
 project (qpgi CXX)
 
 set (CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake")
-set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -pedantic -Wall -Wextra")
+set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -march=native -msse2 -pedantic -Wall -Wextra")
 set (CMAKE_VERBOSE_MAKEFILE OFF)
 
 option(QPGI_BUILD_TESTS "Build tests" ON)

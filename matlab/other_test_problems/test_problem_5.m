@@ -1,3 +1,4 @@
+addpath('../matlab_implementation')
 addpath('~/local/bin/qp_mex')
 
 clear;clc
@@ -9,4 +10,4 @@ format long
 H = H+1e-14*eye(2);
 
 fprintf('\nWITH regularization\n')
-[X,F] = solve_and_verify(x_ref,H,h,C,c,1e-01);
+[X,F] = solve_and_verify(x_ref,H,h,C,c);

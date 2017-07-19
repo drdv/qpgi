@@ -24,7 +24,21 @@ namespace qpgi
 
             // form J = inv(L)'
             _J.setIdentity(_numb_var,_numb_var);
-            chol_stored_in_upper_H.triangularView<Eigen::Upper>().solveInPlace(_J);
+
+            // --------------------------------------------------------------------------------------------
+            // FIXME: to do something about this
+            // --------------------------------------------------------------------------------------------
+            // When in solver.h I use: Eigen::LLT<Eigen::Ref<Matrix>, Eigen::Upper> chol(H);
+            // The code below has problems when solving with the Cholesky factor of the regularized Hessian in
+            // ../matlab/other_test_problems/test_problem_5.m: 2*10^-5*[1 -1;-1 1] + 1e-14*eye(2)
+            // chol_stored_in_upper_H.triangularView<Eigen::Upper>().solveInPlace(_J);
+
+            // The above problem doesn't appear when I do the transposition trick below.
+            // In solver.h I use: Eigen::LLT<Eigen::Ref<Matrix>, Eigen::Lower> chol(H);
+            // but I require the extra transposeInPlace()
+            chol_stored_in_upper_H.triangularView<Eigen::Lower>().solveInPlace(_J);
+            _J.transposeInPlace();
+            // --------------------------------------------------------------------------------------------
 
             // From this point on H is never used and one is tempted to store _R in it.
             // Doing this using a dependency injection with a reference seems to be the way
