@@ -91,8 +91,8 @@ namespace qpgi
             if (std::abs(denominator) >= tolerance*tolerance)
             {
                 primal_step_length = -candidate_constraint._ctr_violation / denominator;
+                candidate_constraint.update_step_along_the_ctr_normal(denominator);
             }
-            candidate_constraint.update_step_along_the_ctr_normal(denominator);
         }
 
         // assumes that 'd' has been formed appropriately
