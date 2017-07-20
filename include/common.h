@@ -36,7 +36,6 @@ namespace qpgi
 
     enum class StepType
     {
-        UNDEFINED,
         STOP,
         DUAL_STEP,
         PARTIAL_STEP,

@@ -102,22 +102,7 @@ namespace qpgi
                            C,
                            _tolerance);
 
-                // compute dual step length
-                RealScalar a_dual_step_length;
-                for (Index i=0; i<_constraints_register.get_numb_active_ctr(); ++i)
-                {
-                    if (_dual_step_direction_active_ctr[i] < -_tolerance)
-                    {
-                        a_dual_step_length =
-                            -_dual_variable[_constraints_register.get_index_active(i)] /
-                            _dual_step_direction_active_ctr[i];
-                        if (a_dual_step_length < _step_length._dual)
-                        {
-                            _step_length._dual = a_dual_step_length;
-                            _step_length._active_ctr_index_with_blocking_dual = i;
-                        }
-                    }
-                }
+                compute_dual_step_length();
 
                 _step_length.determine_actual_step();
 
@@ -151,6 +136,27 @@ namespace qpgi
                 }
 
                 _iteration_number++;
+            }
+        }
+
+    private:
+
+        void compute_dual_step_length()
+        {
+            RealScalar a_dual_step_length;
+            for (Index i=0; i<_constraints_register.get_numb_active_ctr(); ++i)
+            {
+                if (_dual_step_direction_active_ctr[i] < -_tolerance)
+                {
+                    a_dual_step_length =
+                        -_dual_variable[_constraints_register.get_index_active(i)] /
+                        _dual_step_direction_active_ctr[i];
+                    if (a_dual_step_length < _step_length._dual)
+                    {
+                        _step_length._dual = a_dual_step_length;
+                        _step_length._active_ctr_index_with_blocking_dual = i;
+                    }
+                }
             }
         }
 
@@ -188,6 +194,7 @@ namespace qpgi
         // -----------------------------------------------------------------------
         // getters
         // -----------------------------------------------------------------------
+    public:
 
         Vector dual_variable()
         {

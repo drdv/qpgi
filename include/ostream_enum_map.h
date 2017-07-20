@@ -41,7 +41,6 @@ namespace qpgi
         static std::map<StepType, std::string> map;
         if (map.size() == 0)
         {
-            INSERT_ELEMENT(StepType::UNDEFINED);
             INSERT_ELEMENT(StepType::STOP);
             INSERT_ELEMENT(StepType::DUAL_STEP);
             INSERT_ELEMENT(StepType::PARTIAL_STEP);

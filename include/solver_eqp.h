@@ -40,11 +40,6 @@ namespace qpgi
             _J.transposeInPlace();
             // --------------------------------------------------------------------------------------------
 
-            // From this point on H is never used and one is tempted to store _R in it.
-            // Doing this using a dependency injection with a reference seems to be the way
-            // to go even though it would restrict the use of the class. Anyway, for the moment
-            // I simply allocate memory.
-            //
             // I allocate one extra column which would store the vector 'd' when _numb_ctr == _numb_var
             // In this way I can update 'd' in remove_constraint_from_basis(...)
             _R.resize(_numb_var,_numb_var+1);
@@ -67,20 +62,13 @@ namespace qpgi
             // if during the previous iteration a StepType::FULL_STEP was performed
             if (step_length._step_type == StepType::FULL_STEP)
             {
-                // form 'd' from scratch (we have a new normal)
+                // form 'd' from scratch (we have a new candidate constraint to deal with)
                 d.noalias() = _J.transpose() * C.row(candidate_constraint._index).transpose();
             }
-            else if ((step_length._step_type == StepType::DUAL_STEP) ||
-                     (step_length._step_type == StepType::PARTIAL_STEP))
+            else // if StepType::DUAL_STEP or StepType::PARTIAL_STEP
             {
                 // copy 'd' from the previous step
-                // since one constraint was removed, we wouldn't go out of range
                 d = _R.col(_numb_ctr+1);
-            }
-            else
-            {
-                // FIXME: to remove
-                throw std::runtime_error("We shouldn't be here\n");
             }
 
             // form dual step direction
@@ -158,6 +146,7 @@ namespace qpgi
             RealScalar givens_norm;
             while (ctr_index < _numb_ctr-1)
             {
+                // FIXME: this should be written in a more descriptive way
                 Index trailing_columns = _numb_ctr - ctr_index - 1;
 
                 _gr.makeGivens(R.coeffRef(ctr_index  ,ctr_index+1),
