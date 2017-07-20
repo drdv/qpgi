@@ -51,7 +51,14 @@ namespace qpgi
         Index _active_ctr_index_with_blocking_dual;
         StepType _step_type;
 
-        void reset(StepType step_type = StepType::UNDEFINED)
+        void initialize(StepType step_type)
+        {
+            reset();
+            _step_type = step_type;
+        }
+
+        // _step_type is not modified here
+        void reset()
         {
             _primal = std::numeric_limits<double>::infinity();
             _dual = std::numeric_limits<double>::infinity();
@@ -59,7 +66,6 @@ namespace qpgi
             // index of active (primal) constraint, whose assocated
             // dual constraint prevents making a full primal step
             _active_ctr_index_with_blocking_dual = -1;
-            _step_type = step_type;
         }
 
         void determine_actual_step()

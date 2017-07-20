@@ -67,7 +67,7 @@ namespace qpgi
             x.noalias() = -chol.solve(h);
 
             _iteration_number = 0;
-            _step_length.reset(StepType::FULL_STEP);
+            _step_length.initialize(StepType::FULL_STEP);
             while (true)
             {
                 // determine a new candidate constraint
@@ -97,7 +97,7 @@ namespace qpgi
                 // compute primal & dual step directions as well as the primal step length
                 _eqp.solve(_primal_step_direction,
                            _dual_step_direction_active_ctr,
-                           _step_length._primal,
+                           _step_length,
                            _candidate_constraint,
                            C,
                            _tolerance);

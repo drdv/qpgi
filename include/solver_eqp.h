@@ -44,28 +44,19 @@ namespace qpgi
             // Doing this using a dependency injection with a reference seems to be the way
             // to go even though it would restrict the use of the class. Anyway, for the moment
             // I simply allocate memory.
-            _R.resize(_numb_var,_numb_var);
+            //
+            // I allocate one extra column which would store the vector 'd' when _numb_ctr == _numb_var
+            // In this way I can update 'd' in remove_constraint_from_basis(...)
+            _R.resize(_numb_var,_numb_var+1);
         }
 
         void solve(Eigen::Ref<Vector> primal_step_direction,
                    Eigen::Ref<Vector> dual_step_direction,
-                         RealScalar & primal_step_length,
+                         StepLength & step_length,
                          CandidateConstraint & candidate_constraint,
                          const Eigen::Ref<Matrix> C,
                          const RealScalar tolerance)
         {
-            // Protection against accessing memory outside of what is allocated for _R.
-            // Since _R is full-rank, when _numb_ctr == _numb_var, the primal step is zero.
-            // FIXME: to organize differently
-            if (_numb_ctr == _numb_var)
-            {
-                primal_step_direction.setZero();
-                dual_step_direction.noalias() =
-                    -_R.triangularView<Eigen::Upper>()
-                    .solve(_J.transpose() * C.row(candidate_constraint._index).transpose());
-                return;
-            }
-
             // form blocks for convenience
             VectorBlockFromMatrix d (_R,         0, _numb_ctr,             _numb_var, 1                    );
             VectorBlockFromMatrix d1(_R,         0, _numb_ctr, _numb_ctr            , 1                    );
@@ -73,11 +64,26 @@ namespace qpgi
             MatrixBlock           R (_R,         0,         0, _numb_ctr            , _numb_ctr            );
             MatrixBlock           J2(_J,         0, _numb_ctr, _numb_var            , _numb_var - _numb_ctr);
 
-            // FIXME: I do the product explicitly for the moment
-            d.noalias() = _J.transpose() * C.row(candidate_constraint._index).transpose();
+            // if during the previous iteration a StepType::FULL_STEP was performed
+            if (step_length._step_type == StepType::FULL_STEP)
+            {
+                // form 'd' from scratch (we have a new normal)
+                d.noalias() = _J.transpose() * C.row(candidate_constraint._index).transpose();
+            }
+            else if ((step_length._step_type == StepType::DUAL_STEP) ||
+                     (step_length._step_type == StepType::PARTIAL_STEP))
+            {
+                // copy 'd' from the previous step
+                // since one constraint was removed, we wouldn't go out of range
+                d = _R.col(_numb_ctr+1);
+            }
+            else
+            {
+                // FIXME: to remove
+                throw std::runtime_error("We shouldn't be here\n");
+            }
 
-            // form step directions in primal and dual space
-            primal_step_direction.noalias() = -J2 * d2;
+            // form dual step direction
             if (_numb_ctr > 0)
             {
                 // FIXME: if the inequality constraints come after the equality constraints
@@ -85,12 +91,26 @@ namespace qpgi
                 dual_step_direction.head(_numb_ctr).noalias() = -R.triangularView<Eigen::Upper>().solve(d1);
             }
 
+            // form primal step direction
+            if (_numb_ctr < _numb_var)
+            {
+                primal_step_direction.noalias() = -J2 * d2;
+            }
+            else
+            {
+                // when _numb_ctr == _numb_var, primal_step_direction = 0,
+                // but there is no need to set it because it would not be used
+                // no need to set candidate_constraint.update_step_along_the_ctr_normal either
+                // so I simply return
+                return;
+            }
+
             RealScalar denominator = C.row(candidate_constraint._index) * primal_step_direction;
             // idea from qpmad (however, it seems to be more reasonable to square the tolerance)
             // (this hasn't been tested properly)
             if (std::abs(denominator) >= tolerance*tolerance)
             {
-                primal_step_length = -candidate_constraint._ctr_violation / denominator;
+                step_length._primal = -candidate_constraint._ctr_violation / denominator;
                 candidate_constraint.update_step_along_the_ctr_normal(denominator);
             }
         }
@@ -129,14 +149,16 @@ namespace qpgi
 
         void remove_constraint_from_basis(Index ctr_index)
         {
-            MatrixBlock R (_R, 0, 0, _numb_ctr, _numb_ctr);
+            // because the algorithm cannot include more than _numb_var constraints
+            // in the working set we cannot go out of range for _R due to the "+1"
+            MatrixBlock R (_R, 0, 0, _numb_ctr, _numb_ctr+1);
 
             // downdate factorization
             // (no work is required when removing the last constraint)
             RealScalar givens_norm;
             while (ctr_index < _numb_ctr-1)
             {
-                Index trailing_columns = _numb_ctr - ctr_index - 2;
+                Index trailing_columns = _numb_ctr - ctr_index - 1;
 
                 _gr.makeGivens(R.coeffRef(ctr_index  ,ctr_index+1),
                                R.coeffRef(ctr_index+1,ctr_index+1),
@@ -145,6 +167,8 @@ namespace qpgi
                 // apply _gr.adjoint() to the rows of R
                 R.coeffRef(ctr_index  ,ctr_index+1) = givens_norm;
                 R.coeffRef(ctr_index+1,ctr_index+1) = 0;
+                // here we apply the transformation to the 'd' as well
+                // (it is stored in the last column)
                 R.rightCols(trailing_columns).applyOnTheLeft(ctr_index,
                                                              ctr_index+1,
                                                              _gr.adjoint());
