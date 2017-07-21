@@ -28,8 +28,8 @@ function P = qpoases_cpp_get_data(folder_name, tolerance)
 
     %% load solution
     P.x_opt = load([folder_name, '/x_opt.oqp']);
-    P.y_opt = load([folder_name, '/y_opt.oqp']);
-    P.obj_opt = load([folder_name, '/obj_opt.oqp']);
+    %%P.y_opt = load([folder_name, '/y_opt.oqp']);
+    %%P.obj_opt = load([folder_name, '/obj_opt.oqp']);
 
     %% form output
     P.folder_name = folder_name;

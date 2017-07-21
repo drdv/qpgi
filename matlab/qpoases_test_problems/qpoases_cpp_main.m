@@ -8,6 +8,7 @@ solver_tolerance = 1e-08;
 
 root_folders{1} = 'cpp/oqp';
 root_folders{2} = 'cpp/problems';
+root_folders{3} = '/Users/drdv/git/github/qp-collection/inverse_kinematics_pepper';
 
 folders_with_test_problems = qpoases_cpp_get_folders(root_folders);
 

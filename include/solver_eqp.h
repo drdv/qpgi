@@ -47,10 +47,10 @@ namespace qpgi
 
         void solve(Eigen::Ref<Vector> primal_step_direction,
                    Eigen::Ref<Vector> dual_step_direction,
-                         StepLength & step_length,
-                         CandidateConstraint & candidate_constraint,
-                         const Eigen::Ref<Matrix> C,
-                         const RealScalar tolerance)
+                   StepLength & step_length,
+                   CandidateConstraint & candidate_constraint,
+                   const Eigen::Ref<Matrix> C,
+                   const RealScalar tolerance)
         {
             // form blocks for convenience
             VectorBlockFromMatrix d (_R,         0, _numb_ctr,             _numb_var, 1                    );
@@ -63,7 +63,10 @@ namespace qpgi
             if (step_length._step_type == StepType::FULL_STEP)
             {
                 // form 'd' from scratch (we have a new candidate constraint to deal with)
-                d.noalias() = _J.transpose() * C.row(candidate_constraint._index).transpose();
+                if (candidate_constraint._status == ConstraintActivationStatus::ACTIVE_UPPER_BOUND)
+                    d.noalias() = _J.transpose() * C.row(candidate_constraint._index).transpose();
+                else
+                    d.noalias() = -_J.transpose() * C.row(candidate_constraint._index).transpose();
             }
             else // if StepType::DUAL_STEP or StepType::PARTIAL_STEP
             {

@@ -9,14 +9,27 @@ function log = qpoases_cpp_solve(P, solver_tolerance, solution_tolerance)
     log.singular_solve = 0;
     for i=1:P.numb_qps
 
-	C = [eye(P.numb_var);-eye(P.numb_var)];
-	c = [P.ub(i,:)';-P.lb(i,:)'];
-	if (P.numb_ctr_in > 0)
-	    C = [C;P.A;-P.A];
-	    c = [c;P.ubA(i,:)';-P.lbA(i,:)'];
-	end
+	if 0
+	    C = [eye(P.numb_var);-eye(P.numb_var)];
+	    c = [P.ub(i,:)';-P.lb(i,:)'];
+	    if (P.numb_ctr_in > 0)
+		C = [C;P.A;-P.A];
+		c = [c;P.ubA(i,:)';-P.lbA(i,:)'];
+	    end
 
-	[x, exitflag] = qpgi(P.H,P.g(i,:)',C,c,solver_tolerance);
+	    [x, exitflag] = qpgi(P.H,P.g(i,:)',C,c,solver_tolerance);
+	else
+	    C = eye(P.numb_var);
+	    c_lb = P.lb(i,:)';
+	    c_ub = P.ub(i,:)';
+	    if (P.numb_ctr_in > 0)
+		C = [C;P.A];
+		c_lb = [c_lb;P.lbA(i,:)'];
+		c_ub = [c_ub;P.ubA(i,:)'];
+	    end
+
+	    [x, exitflag, u, iter] = qpgi(P.H,P.g(i,:)',C,c_lb,c_ub,solver_tolerance);
+	end
 
 	if strcmp(exitflag, 'HESSIAN_FACTORIZATION_PROBLEMS')
 	    fprintf('-STOP-   <POSSIBLY_SINGULAR_HESSIAN: %e> Problem [%s (%d/%d)] \n', ...
@@ -39,12 +52,13 @@ function log = qpoases_cpp_solve(P, solver_tolerance, solution_tolerance)
 		    P.folder_name, i, P.numb_qps, norm(err));
 
 	    %% compare objective functions
+	    %{
 	    obj = 0.5*x'*P.H*x + P.g(i,:)*x;
             if obj > P.obj_opt(i) + 1e-07
                 fprintf('\n\n ----  err(x): %e, err(f): %e \n', norm(err), obj - P.obj_opt(i));
 		keyboard
             end
-
+	    %}
 	    log.normal_solve = log.normal_solve + 1;
 	else
 	    fprintf('FAILED   Problem [%s (%d/%d)]: %e \n', ...

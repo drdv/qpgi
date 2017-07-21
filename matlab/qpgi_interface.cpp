@@ -13,8 +13,9 @@ void mexFunction( int numb_output, mxArray *output[], int numb_input, const mxAr
     const mxArray *H_mex = input[0];
     const mxArray *h_mex = input[1];
     const mxArray *C_mex = input[2];
-    const mxArray *c_mex = input[3];
-    const mxArray *tol_mex = input[4];
+    const mxArray *c_lb_mex = input[3];
+    const mxArray *c_ub_mex = input[4];
+    const mxArray *tol_mex = input[5];
 
     int numb_var = mxGetM(H_mex);
     int numb_ctr = mxGetM(C_mex);
@@ -33,7 +34,8 @@ void mexFunction( int numb_output, mxArray *output[], int numb_input, const mxAr
     // no need to make deep copies for the other parameters
     Eigen::Map<qpgi::Vector> h(mxGetPr(h_mex), numb_var);
     Eigen::Map<qpgi::Matrix> C(mxGetPr(C_mex), numb_ctr, numb_var);
-    Eigen::Map<qpgi::Vector> c(mxGetPr(c_mex), numb_ctr);
+    Eigen::Map<qpgi::Vector> c_lb(mxGetPr(c_lb_mex), numb_ctr);
+    Eigen::Map<qpgi::Vector> c_ub(mxGetPr(c_ub_mex), numb_ctr);
     Eigen::Map<qpgi::Vector> x(mxGetPr(x_mex), numb_var);
 
     double tol = *mxGetPr(tol_mex);
@@ -46,7 +48,7 @@ void mexFunction( int numb_output, mxArray *output[], int numb_input, const mxAr
     qpgi::TerminationReason termination_reason;
     try
     {
-        termination_reason = solver.solve(x, H, h, C, c, tol);
+        termination_reason = solver.solve(x, H, h, C, c_lb, c_ub, tol);
         Eigen::Map<qpgi::Vector>((double *)mxGetPr(u_mex), numb_ctr, 1) = solver.dual_variable();
         *mxGetPr(numb_iterations) = solver.numb_iterations();
     }

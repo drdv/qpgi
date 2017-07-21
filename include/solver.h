@@ -3,6 +3,10 @@
 #include "solver_eqp.h"
 #include "constraints_register.h"
 
+#include "logger.h"
+
+// FIXME: A(i) -> A.coeffRoef(i)
+
 namespace qpgi
 {
     class Solver
@@ -27,13 +31,14 @@ namespace qpgi
     public:
 
         /**
-           \brief minimize 0.5*x'*H*x + x'*h, subject to C*x <= c
+           \brief minimize 0.5*x'*H*x + x'*h, subject to c_lb <= C*x <= c_ub
         */
         TerminationReason solve(Eigen::Ref<Vector> x,
                                 Eigen::Ref<Matrix> H,
                                 const Eigen::Ref<Vector> h,
                                 const Eigen::Ref<Matrix> C,
-                                const Eigen::Ref<Vector> c,
+                                const Eigen::Ref<Vector> c_lb,
+                                const Eigen::Ref<Vector> c_ub,
                                 RealScalar tolerance=1e-12)
         {
             _tolerance = tolerance;
@@ -42,7 +47,7 @@ namespace qpgi
             // FIXME: delegate the parsing of the problem data
             // -----------------------------------------------------------------------------
             Index primal_variable_size = h.size();
-            Index dual_variable_size = c.size(); // number of constraints
+            Index dual_variable_size = c_ub.size(); // number of constraints
             // -----------------------------------------------------------------------------
 
             // Initialize these here because even if the unconstrained minimizer
@@ -74,7 +79,7 @@ namespace qpgi
                 if (_step_length._step_type == StepType::FULL_STEP)
                 {
                     _ctr_normals_dot_x.noalias() = C*x;
-                    find_violated_constraint(c, _candidate_constraint);
+                    find_violated_constraint(c_lb, c_ub, _candidate_constraint);
 
                     // no candidate constraints for activation
                     if (_candidate_constraint._status == ConstraintActivationStatus::INACTIVE)
@@ -123,8 +128,7 @@ namespace qpgi
                     perform_dual_step();
                     if (_step_length._step_type == StepType::FULL_STEP)
                     {
-                        _constraints_register.add(_candidate_constraint._index,
-                                                  ConstraintActivationStatus::ACTIVE_UPPER_BOUND);
+                        _constraints_register.add(_candidate_constraint);
                         _dual_variable(_candidate_constraint._index) = _candidate_constraint._dual_variable;
                         _eqp.add_candidate_constraint_to_basis();
                     }
@@ -171,23 +175,45 @@ namespace qpgi
             _candidate_constraint._dual_variable += _step_length._actual;
         }
 
-        void find_violated_constraint(const Eigen::Ref<Vector> c,
+
+        /*
+          c_lb <= C*x <= c_ub
+                  C*x - c_ub <= 0
+                  c_lb - C*x <= 0
+        */
+        void find_violated_constraint(const Eigen::Ref<Vector> c_lb,
+                                      const Eigen::Ref<Vector> c_ub,
                                       CandidateConstraint & candidate_constraint)
         {
             candidate_constraint.reset(_tolerance);
-            RealScalar ctr_violation;
+            RealScalar ctr_violation_lb, ctr_violation_ub;
             for (Index i=0; i<_constraints_register.get_numb_ctr(); ++i)
             {
                 if (!_constraints_register.is_active(i))
                 {
-                    ctr_violation = _ctr_normals_dot_x(i) - c(i);
-                    if (ctr_violation > candidate_constraint._ctr_violation)
+                    // a bit of redundant computations here but should be OK
+                    ctr_violation_ub = _ctr_normals_dot_x(i) - c_ub(i);
+                    ctr_violation_lb = c_lb(i) - _ctr_normals_dot_x(i);
+                    if ((ctr_violation_lb > candidate_constraint._ctr_violation) ||
+                        (ctr_violation_ub > candidate_constraint._ctr_violation))
                     {
                         candidate_constraint._index = i;
-                        candidate_constraint._ctr_violation = ctr_violation;
-                        candidate_constraint._status = ConstraintActivationStatus::ACTIVE_UPPER_BOUND;
+                        if (ctr_violation_ub >= ctr_violation_lb)
+                        {
+                            candidate_constraint._ctr_violation = ctr_violation_ub;
+                            candidate_constraint._status = ConstraintActivationStatus::ACTIVE_UPPER_BOUND;
+                        }
+                        else
+                        {
+                            candidate_constraint._ctr_violation = ctr_violation_lb;
+                            candidate_constraint._status = ConstraintActivationStatus::ACTIVE_LOWER_BOUND;
+                        }
                     }
                 }
+            }
+            if (candidate_constraint._status == ConstraintActivationStatus::ACTIVE_LOWER_BOUND)
+            {
+                candidate_constraint._ctr_violation = -candidate_constraint._ctr_violation;
             }
         }
 

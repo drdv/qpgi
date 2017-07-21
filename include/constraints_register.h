@@ -20,6 +20,12 @@ namespace qpgi
             _numb_active_ineq = 0;
         }
 
+        // for convenience
+        inline void add(const CandidateConstraint & candidate_constraint)
+        {
+            add(candidate_constraint._index, candidate_constraint._status);
+        }
+
         void add(const Index ctr_index,
                  const ConstraintActivationStatus ctr_status)
         {
