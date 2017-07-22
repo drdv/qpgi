@@ -3,28 +3,18 @@ addpath('~/local/bin/qp_mex')
 
 clear;clc
 
-if 1
-    H = [1 -1; -1 2];
-    h = [-2; -6];
-    C = [1 1; -1 2; 2 1; -1 0; 0 -1];
-    c = [2; 2; 3; 0; 0];
-else
-    n = 100;
-    m = 60;
-    H = randn(n,n); H = H'*H;
-    h = randn(n,1);
-    C = randn(m,n);
-    c = randn(m,1);
-end
+Inf = 1e10;
 
-[x,u,W,status,iter] = qpgi_matlab(H,h,C,c,false);
+H = [1 -1; -1 2];
+h = [-2; -6];
+C = [1 1; -1 2; 2 1; 1 0; 0 1];
+c_lb = [-Inf; -Inf; -Inf; 0; 0];
+c_ub = [2; 2; 3; Inf; Inf];
 
-[x1, status1, u1, iter1] = qpgi(H, h, C, c);
+x_ref = [0.666666666666667; 1.333333333333333];
 
-norm(x-x1)
+[x, exitflag, u, iter] = qpgi(H, h, C, c_lb, c_ub);
 
-%{
-options = optimset('Algorithm','interior-point-convex','Display','off');
-[x0,fval,exitflag,output,lambda] = quadprog(H,h,C,c,[],[],[],[],[],options);
-fprintf('error = %e, %e \n', norm(x0-x), norm(H*x + h + C'*u))
-%}
+fprintf('exitflag  = %s\n', exitflag)
+fprintf('err(x)    = %e\n', norm(x-x_ref))
+fprintf('numb iter = %d\n', iter)
