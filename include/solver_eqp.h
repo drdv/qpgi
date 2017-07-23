@@ -96,7 +96,12 @@ namespace qpgi
                 return;
             }
 
-            RealScalar denominator = C.row(candidate_constraint._index) * primal_step_direction;
+            RealScalar denominator;
+            if (candidate_constraint._status == ConstraintActivationStatus::ACTIVE_UPPER_BOUND)
+                denominator = C.row(candidate_constraint._index) * primal_step_direction;
+            else
+                denominator = -C.row(candidate_constraint._index) * primal_step_direction;
+
             // idea from qpmad (however, it seems to be more reasonable to square the tolerance)
             // (this hasn't been tested properly)
             if (std::abs(denominator) >= tolerance*tolerance)

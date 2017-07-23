@@ -211,10 +211,6 @@ namespace qpgi
                     }
                 }
             }
-            if (candidate_constraint._status == ConstraintActivationStatus::ACTIVE_LOWER_BOUND)
-            {
-                candidate_constraint._ctr_violation = -candidate_constraint._ctr_violation;
-            }
         }
 
         // -----------------------------------------------------------------------
